@@ -4,7 +4,7 @@
 
 ### Requirements
 
-1. Java JRE (i recommend Adoptium JRE 21+)
+1. Java OpenJRE or JDK (i recommend Adoptium JRE 21+)
 2. This repository
 
 ### How to use:
