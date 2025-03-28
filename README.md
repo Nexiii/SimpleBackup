@@ -19,4 +19,5 @@
 ### Changelog:
 
 v0.7.1_2025 → Added a config file & the ability to move to a Mounted NAS 
+
 v0.6_2025 → Released to public
