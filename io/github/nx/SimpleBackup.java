@@ -2,100 +2,94 @@ package io.github.nx;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
+
+import io.github.nx.utils.BackupHistory;
+import io.github.nx.utils.ConfigLoader;
+import io.github.nx.utils.FileUtils;
+import io.github.nx.utils.Logger;
+import io.github.nx.utils.UpdateChecker;
+import io.github.nx.utils.ZipUtils;
 
 public class SimpleBackup {
 
-	public static String target = "Z:/Backup/";
-	public static boolean isUploadAllowed = false;
-	private static String listFile = "list.txt";
-	private static final String version = "v0.7.1_2025";
+	private static final String LIST_FILE = "list.txt";
+	private static final String CONFIG_FILE = "config.cfg";
+	public static final String VERSION = "v0.8.1_2025";
+	public static final String VERSIONURL = "https://raw.githubusercontent.com/Nexiii/SimpleBackup/refs/heads/main/version.txt";
 
-	public static void main(String[] args) {
-		System.out.println("[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")) + "] "+ "[INFO] Launching SimpleBackup "+  version);
-		ConfigLoader.loadConfig("config.cfg");
+	public static void main(String[] args){
+		Logger.log("Starting SimpleBackup " +VERSION+"!", Logger.INFO);
+		setCmdTitle("SimpleBackup " + VERSION + " made by Nexiii / Malte");
+		UpdateChecker.checkUpdate();
+        ConfigLoader.loadConfig(CONFIG_FILE);
 
-		String target = ConfigLoader.target;
-		boolean isUploadAllowed = ConfigLoader.isUploadAllowed;
+        String target = ConfigLoader.target;
+        boolean isUploadToNasAllowed = ConfigLoader.isUploadToNasAllowed;
+        String dateFormattedNow = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm"));
+        
+        if(!new File(LIST_FILE).exists()) {
+        	try {
+    			new File(LIST_FILE).createNewFile();
+    			Logger.log("Created 'list.txt' file!", Logger.INFO);
+    			Logger.log("Please add a directory to the 'list.txt' and restart the program.", Logger.INFO);
+    			System.exit(1);
+    		} catch (IOException e) {
+    			Logger.log("Could not create 'list.txt': " + e.getMessage(), Logger.ERROR);
+    		}
+        }
+        
+        try (BufferedReader reader = new BufferedReader(new FileReader(LIST_FILE))) {
+        	Logger.log("Reading '"+ LIST_FILE +"'.", Logger.INFO);   
+        	if (FileUtils.isFileEmpty(LIST_FILE)) {
+                Logger.log("'list.txt' is empty", Logger.ERROR);
+            	System.exit(1);
+            }
+            String line;
+            while ((line = reader.readLine()) != null) {
+            	File directory = new File(line.trim());
+                if (directory.exists() && directory.isDirectory()) {
+                    String zipFileName = directory.getName() + "_" + dateFormattedNow + ".zip";
+                    Logger.log("Creating backup for: " + directory.getAbsolutePath(), Logger.INFO);
+                    File backupFolder = new File("backups/");
+                    backupFolder.mkdir();
 
-		String dateFormattedNow = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-		try {
-
-			System.out.println("[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")) + "] " + "[INFO] Reading '" + listFile + "'");
-			BufferedReader reader = new BufferedReader(new FileReader(listFile));
-			String line;
-			while ((line = reader.readLine()) != null) {
-				File directory = new File(line.trim());
-				if (directory.exists() && directory.isDirectory()) {
-					String zipFileName = directory.getName() + "_" + dateFormattedNow + ".zip";
-					System.out.println("[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")) + "] " + "[INFO] Creating a backup from " + directory.getAbsolutePath());
-					File path = new File("backups/");
-					path.mkdir();
-					zipDirectory(directory, "backups/" + zipFileName);
-					if (isUploadAllowed) {
-						System.out.println("[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")) + "] " + "[INFO] Copying " + zipFileName + " to " + target);
-						Files.copy(Paths.get(new File("backups/" + zipFileName).getAbsolutePath()),
-								Paths.get(target + "/" + zipFileName), StandardCopyOption.REPLACE_EXISTING);
-						System.out.println("[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")) + "] " + "[INFO] Succesfully copied!");
-					} else {
-						System.out.println("[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")) + "] " + "[INFO] Skipping uploading to NAS");
-					}
-				} else {
-					System.out.println("[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")) + "] " + "[INFO] Skipping invalid directory: " + line);
-				}
-			}
-			reader.close();
-			System.out.println(
-					"[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")) + "] " + "[INFO] Done!");
-		} catch (IOException e) {
-			System.err.println(e.getMessage());
-		}
-		System.exit(0);
-	}
-
-	private static void zipDirectory(File folder, String zipFileName) throws IOException {
-		try (FileOutputStream fos = new FileOutputStream(zipFileName); ZipOutputStream zos = new ZipOutputStream(fos)) {
-			zipDirectoryRecursive(folder, folder.getName(), zos);
-			System.out.println("[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")) + "] " + "[INFO] Successfully created a backup from " + folder.getAbsolutePath());
-		}
-	}
-
-	private static void zipDirectoryRecursive(File folder, String parentFolderName, ZipOutputStream zos)
-			throws IOException {
-		File[] files = folder.listFiles();
-		for (File file : files) {
-
-			if (file.getName().equalsIgnoreCase("desktop.ini")) {
-				continue;
-			}
-
-			if (file.isDirectory()) {
-				zipDirectoryRecursive(file, parentFolderName + "/" + file.getName(), zos);
-			} else {
-				try (FileInputStream fis = new FileInputStream(file)) {
-					String zipEntryName = parentFolderName + "/" + file.getName();
-					ZipEntry zipEntry = new ZipEntry(zipEntryName);
-					zos.putNextEntry(zipEntry);
-
-					byte[] buffer = new byte[1024];
-					int length;
-					while ((length = fis.read(buffer)) > 0) {
-						zos.write(buffer, 0, length);
-					}
-
-					zos.closeEntry();
-				}
-			}
-		}
-	}
+                    boolean success = ZipUtils.zipDirectory(directory, "backups/" + zipFileName);
+                    if (success) {
+                    	Logger.log("Successfully created!", Logger.INFO);
+                        BackupHistory.logBackup(zipFileName);
+                        if (isUploadToNasAllowed) {
+                        	Logger.log("Copying " + zipFileName + " to " + target, Logger.INFO);
+                            FileUtils.copyFile(new File("backups/" + zipFileName), new File(target + "/" + zipFileName));
+                            Logger.log("Successfully copied!", Logger.INFO);
+                        }
+                    } else {
+                    	Logger.log("Skipping upload due to ZIP errors!", Logger.ERROR);
+                    }
+                } else {
+                	Logger.log("Skipping invalid directory: " +line, Logger.ERROR);
+                }
+            }
+        } catch (IOException e) {
+        	Logger.log("Error processing backup:" + e.getMessage(), Logger.ERROR);
+        }
+        Logger.log("Done!", Logger.INFO);
+        System.exit(1);
+    }
+	
+	public static void setCmdTitle(String title) {
+        try {
+            String os = System.getProperty("os.name").toLowerCase();
+            if (os.contains("win")) {
+                new ProcessBuilder("cmd", "/c", "title " + title).inheritIO().start();
+            } else {
+            	Logger.log("CMD title change is only supported on Windows.", Logger.WARNING);
+            }
+        } catch (Exception e) {
+        	Logger.log("Failed to change CMD title:" + e.getMessage(), Logger.ERROR);
+        }
+    }
 }
