@@ -22,7 +22,7 @@ public class SimpleBackup {
 	private static final String version = "v0.7.1_2025";
 
 	public static void main(String[] args) {
-		System.out.println("[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")) + "] "+ "Launching SimpleBackup "+  version);
+		System.out.println("[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")) + "] "+ "[INFO] Launching SimpleBackup "+  version);
 		ConfigLoader.loadConfig("config.cfg");
 
 		String target = ConfigLoader.target;
@@ -31,32 +31,32 @@ public class SimpleBackup {
 		String dateFormattedNow = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
 		try {
 
-			System.out.println("[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")) + "] " + "Reading '" + listFile + "'");
+			System.out.println("[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")) + "] " + "[INFO] Reading '" + listFile + "'");
 			BufferedReader reader = new BufferedReader(new FileReader(listFile));
 			String line;
 			while ((line = reader.readLine()) != null) {
 				File directory = new File(line.trim());
 				if (directory.exists() && directory.isDirectory()) {
 					String zipFileName = directory.getName() + "_" + dateFormattedNow + ".zip";
-					System.out.println("[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")) + "] " + "Creating a backup from " + directory.getAbsolutePath());
+					System.out.println("[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")) + "] " + "[INFO] Creating a backup from " + directory.getAbsolutePath());
 					File path = new File("backups/");
 					path.mkdir();
 					zipDirectory(directory, "backups/" + zipFileName);
 					if (isUploadAllowed) {
-						System.out.println("[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")) + "] " + "Copying " + zipFileName + " to " + target);
+						System.out.println("[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")) + "] " + "[INFO] Copying " + zipFileName + " to " + target);
 						Files.copy(Paths.get(new File("backups/" + zipFileName).getAbsolutePath()),
 								Paths.get(target + "/" + zipFileName), StandardCopyOption.REPLACE_EXISTING);
-						System.out.println("[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")) + "] " + "Succesfully copied!");
+						System.out.println("[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")) + "] " + "[INFO] Succesfully copied!");
 					} else {
-						System.out.println("[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")) + "] " + "Skipping uploading to NAS");
+						System.out.println("[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")) + "] " + "[INFO] Skipping uploading to NAS");
 					}
 				} else {
-					System.out.println("[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")) + "] " + "Skipping invalid directory: " + line);
+					System.out.println("[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")) + "] " + "[INFO] Skipping invalid directory: " + line);
 				}
 			}
 			reader.close();
 			System.out.println(
-					"[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")) + "] " + "Done!");
+					"[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")) + "] " + "[INFO] Done!");
 		} catch (IOException e) {
 			System.err.println(e.getMessage());
 		}
@@ -66,7 +66,7 @@ public class SimpleBackup {
 	private static void zipDirectory(File folder, String zipFileName) throws IOException {
 		try (FileOutputStream fos = new FileOutputStream(zipFileName); ZipOutputStream zos = new ZipOutputStream(fos)) {
 			zipDirectoryRecursive(folder, folder.getName(), zos);
-			System.out.println("[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")) + "] " + "Successfully created a backup from " + folder.getAbsolutePath());
+			System.out.println("[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")) + "] " + "[INFO] Successfully created a backup from " + folder.getAbsolutePath());
 		}
 	}
 
