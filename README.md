@@ -18,8 +18,11 @@
 ### Changelog:
 
 v0.8.1_2025   → Rewritten and made it more readable
+
               → Added a Logger to print to console more easely
+              
               → Added a Updatechecker
+              
               → Added a history-log
 
 v0.7.1_2025   → Added a config file & the ability to move to a Mounted NAS 
