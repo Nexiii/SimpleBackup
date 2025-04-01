@@ -1,6 +1,6 @@
 ## SimpleBackup v0.8.1_2025
 
-### A simple backup script made in Java. Made by Nexiii | Malte
+### A simple backup script made in Java.
 
 ### Requirements
 
